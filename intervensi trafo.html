@@ -1,0 +1,794 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Black Box Intervensi Aset Trafo Tenaga</title>
+<meta name="description" content="Simulasi interaktif: input HI uji trafo → black box → jenis, tindakan, dan waktu intervensi.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%230A6EBD'/%3E%3Cpath d='M36 6 16 36h14l-4 22 22-32H34z' fill='%23FFC72C'/%3E%3C/svg%3E">
+<style>
+:root{
+  color-scheme: light;
+  --bg:#F2F7FC; --card:#FFFFFF; --ink:#10263D; --muted:#566B84; --line:#D3E1EF; --line-2:#E6EEF6;
+  --blue:#0A6EBD; --blue-d:#073F70; --blue-dd:#052B4E; --blue-l:#E4F1FB; --yellow:#FFC72C; --red:#E4002B;
+  /* Okabe-Ito: aman untuk buta warna */
+  --j-replace:#D55E00; --j-replace-bg:#FCEBDF;
+  --j-retrofit:#B87A00; --j-retrofit-bg:#FFF1CC;
+  --j-repair:#007A5A;  --j-repair-bg:#DDF3EB;
+  --j-verif:#1E78B4;   --j-verif-bg:#E3F1FB;
+  --hi1:#E3F1FB; --hi2:#B5DBF5; --hi3:#56B4E9; --hi4:#E69F00; --hi5:#D55E00;
+  --radius:14px; --shadow:0 1px 2px rgba(16,38,61,.06),0 6px 18px rgba(10,110,189,.07);
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.5 "Segoe UI",system-ui,-apple-system,"Helvetica Neue",Arial,sans-serif;-webkit-font-smoothing:antialiased}
+button,input,select{font:inherit;color:inherit}
+:focus-visible{outline:3px solid #0A6EBD;outline-offset:2px;border-radius:6px}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+
+/* ---------- Header ---------- */
+.stripe{height:6px;background:linear-gradient(90deg,var(--blue) 0 62%,var(--yellow) 62% 86%,var(--red) 86%)}
+header.top{background:#fff;border-bottom:1px solid var(--line)}
+.top-in{max-width:1320px;margin:0 auto;padding:14px 20px;display:flex;gap:18px;align-items:center;justify-content:space-between;flex-wrap:wrap}
+.brand{display:flex;gap:12px;align-items:center;min-width:0}
+.logo{width:44px;height:44px;border-radius:12px;background:var(--blue);display:grid;place-items:center;flex:none}
+.brand h1{font-size:19px;line-height:1.2;margin:0;font-weight:750;letter-spacing:-.01em}
+.brand p{margin:2px 0 0;color:var(--muted);font-size:13px}
+.flow{display:flex;align-items:center;gap:8px;font-size:12.5px;font-weight:650}
+.flow .n{padding:6px 12px;border-radius:999px;border:1px solid var(--line);background:var(--bg);color:var(--blue-d);white-space:nowrap}
+.flow .n.bb{background:var(--blue-d);border-color:var(--blue-d);color:#fff}
+.flow svg{color:var(--muted)}
+
+/* ---------- Layout ---------- */
+main{max-width:1320px;margin:0 auto;padding:18px 20px 90px;display:grid;grid-template-columns:minmax(0,1.02fr) minmax(0,1fr);gap:18px;align-items:start}
+.col-r{position:sticky;top:12px;display:grid;gap:14px;max-height:calc(100vh - 24px);overflow:auto;padding:2px 4px 8px 2px;scrollbar-width:thin}
+.col-l{display:grid;gap:14px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow)}
+.card>header{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:12px 16px;border-bottom:1px solid var(--line-2)}
+.card h2{font-size:14.5px;margin:0;font-weight:750;display:flex;gap:9px;align-items:center}
+.step{display:inline-grid;place-items:center;width:22px;height:22px;border-radius:50%;background:var(--blue);color:#fff;font-size:12px;font-weight:700;flex:none}
+.card .body{padding:14px 16px}
+.hint{color:var(--muted);font-size:12.5px}
+
+/* ---------- Input ---------- */
+.ident{display:grid;grid-template-columns:1fr 1fr 1.3fr;gap:12px}
+.fld label{display:block;font-size:12px;color:var(--muted);font-weight:600;margin-bottom:4px}
+.fld input[type=text],.fld input[type=number],.fld input[type=date]{width:100%;padding:8px 10px;border:1px solid var(--line);border-radius:9px;background:#fff;min-height:38px}
+.chk{display:flex;gap:9px;align-items:flex-start;margin-top:12px;font-size:13.5px;cursor:pointer}
+.chk input{width:18px;height:18px;margin-top:2px;accent-color:var(--blue)}
+.presets{display:flex;flex-wrap:wrap;gap:8px}
+.chip{border:1px solid var(--line);background:#fff;border-radius:999px;padding:7px 13px;font-size:13px;font-weight:600;cursor:pointer;color:var(--blue-d);min-height:36px;transition:background .15s,border-color .15s}
+.chip:hover{background:var(--blue-l);border-color:#9CC8EA}
+.chip.on{background:var(--blue);border-color:var(--blue);color:#fff}
+.chip.ghost{color:var(--muted)}
+.legend{display:flex;flex-wrap:wrap;gap:6px 12px;align-items:center;font-size:12px;color:var(--muted)}
+.legend i{display:inline-grid;place-items:center;width:20px;height:20px;border-radius:6px;font-style:normal;font-weight:700;font-size:12px;color:var(--ink);border:1px solid rgba(16,38,61,.15)}
+.prm{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:6px 0;border-bottom:1px dashed var(--line-2)}
+.prm:last-child{border-bottom:0}
+.prm .nm{font-size:13.5px;font-weight:550;min-width:0}
+.seg{display:flex;gap:4px;flex:none}
+.seg button{width:34px;height:34px;border-radius:8px;border:1px solid var(--line);background:#fff;font-weight:700;cursor:pointer;color:var(--muted);padding:0;transition:transform .08s,background .12s}
+.seg button:hover{background:var(--blue-l)}
+.seg button:active{transform:scale(.94)}
+.seg button[aria-checked=true]{color:var(--ink);border-color:var(--ink);box-shadow:inset 0 0 0 1px var(--ink)}
+.seg button[data-v="0"][aria-checked=true]{background:repeating-linear-gradient(135deg,#EEF3F8 0 5px,#fff 5px 10px)}
+.seg button[data-v="1"][aria-checked=true]{background:var(--hi1)}
+.seg button[data-v="2"][aria-checked=true]{background:var(--hi2)}
+.seg button[data-v="3"][aria-checked=true]{background:var(--hi3)}
+.seg button[data-v="4"][aria-checked=true]{background:var(--hi4)}
+.seg button[data-v="5"][aria-checked=true]{background:var(--hi5);color:#fff}
+.cnt{font-weight:600;color:var(--blue-d);font-size:12.5px;background:var(--blue-l);padding:3px 10px;border-radius:999px}
+
+/* ---------- Black box ---------- */
+.bb{background:linear-gradient(160deg,var(--blue-dd),var(--blue-d) 60%,#0B5C9E);color:#fff;border:0;overflow:hidden;position:relative}
+.bb::after{content:"";position:absolute;right:-30px;top:-30px;width:150px;height:150px;border-radius:50%;background:radial-gradient(circle,rgba(255,199,44,.28),transparent 68%);pointer-events:none}
+.bb>header{border-color:rgba(255,255,255,.15)}
+.bb h2{color:#fff}
+.bb .step{background:var(--yellow);color:var(--blue-dd)}
+.bb .hint{color:#C3D9EE}
+.stages{display:grid;grid-template-columns:repeat(5,1fr);gap:8px}
+.stg{border:1px solid rgba(255,255,255,.22);border-radius:10px;padding:8px 6px;text-align:center;font-size:11.5px;line-height:1.25;color:#CFE2F3;background:rgba(255,255,255,.05);transition:background .25s,color .25s,border-color .25s,transform .25s}
+.stg b{display:block;font-size:15px;margin-bottom:2px}
+.stg.on{background:rgba(255,199,44,.95);border-color:var(--yellow);color:var(--blue-dd);transform:translateY(-2px)}
+.bbstat{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-top:12px;font-size:13px;flex-wrap:wrap}
+.bbstat .pill{background:rgba(255,255,255,.14);border-radius:999px;padding:4px 11px;font-weight:600;font-size:12.5px}
+.peek{margin-top:12px}
+.tg{display:inline-flex;gap:8px;align-items:center;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.3);border-radius:999px;color:#fff;padding:6px 14px;cursor:pointer;font-weight:600;font-size:13px;min-height:36px}
+.tg:hover{background:rgba(255,255,255,.2)}
+.fmgrid{display:none;grid-template-columns:repeat(auto-fill,minmax(112px,1fr));gap:6px;margin-top:12px}
+.peek.open .fmgrid{display:grid}
+.fmt{background:#fff;color:var(--ink);border-radius:10px;padding:8px 10px;border-left:6px solid #C8D5E3;min-width:0}
+.fmt .t{font-size:11px;line-height:1.25;color:var(--muted);height:42px;overflow:hidden}
+.fmt .t b{color:var(--ink)}
+.fmt .r{display:flex;align-items:center;justify-content:space-between;margin-top:2px;font-size:11px;gap:4px}
+.fmt .hi{font-weight:800;font-size:15px}
+.fmt .bar{height:5px;border-radius:3px;background:#E3EBF3;margin-top:5px;overflow:hidden}
+.fmt .bar span{display:block;height:100%;background:var(--blue)}
+.fmt.h1{border-left-color:var(--hi1)}.fmt.h2{border-left-color:var(--hi2)}.fmt.h3{border-left-color:var(--hi3)}.fmt.h4{border-left-color:var(--hi4)}.fmt.h5{border-left-color:var(--hi5)}
+.fmt.h4 .hi,.fmt.h5 .hi{color:var(--j-replace)}
+.fmt.h4 .hi{color:var(--j-retrofit)}
+
+/* ---------- Output ---------- */
+.out2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.busy .fade{opacity:.35;transition:opacity .15s}
+.fade{transition:opacity .25s}
+.jbadge{display:flex;gap:12px;align-items:center;padding:12px 14px;border-radius:12px;border:2px solid var(--c,#C8D5E3);background:var(--bg-c,#F3F7FB)}
+.jbadge .bars{display:flex;gap:3px;align-items:flex-end;height:30px}
+.jbadge .bars i{width:7px;border-radius:2px;background:var(--c);opacity:.22}
+.jbadge .bars i:nth-child(1){height:10px}.jbadge .bars i:nth-child(2){height:16px}.jbadge .bars i:nth-child(3){height:23px}.jbadge .bars i:nth-child(4){height:30px}
+.jbadge .bars i.f{opacity:1}
+.jbadge .big{font-size:22px;font-weight:800;letter-spacing:-.01em;line-height:1.1;color:var(--c)}
+.jbadge .sub{font-size:12.5px;color:var(--muted);margin-top:3px}
+.ladder{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-top:12px}
+.ladder div{text-align:center;font-size:11px;font-weight:650;padding:6px 3px;border-radius:8px;border:1px solid var(--line);color:var(--muted);line-height:1.2}
+.ladder div.on{background:var(--bg-c);border-color:var(--c);color:var(--c);box-shadow:inset 0 0 0 1px var(--c)}
+.ladder div small{display:block;font-weight:600;font-size:10.5px;margin-top:2px}
+.wk{padding:2px 0}
+.wk .big{font-size:20px;font-weight:800;line-height:1.2;color:var(--blue-d)}
+.wk .date{margin-top:3px;font-size:14px;font-weight:650}
+.wk .lbl{margin-top:8px;font-size:13px;color:var(--muted)}
+.tl{position:relative;margin:16px 6px 4px;height:8px;background:var(--line-2);border-radius:4px}
+.tl .seg3,.tl .seg24{position:absolute;top:0;bottom:0;border-radius:4px}
+.tl .mk{position:absolute;top:-5px;width:18px;height:18px;border-radius:50%;border:3px solid #fff;background:var(--blue);box-shadow:0 0 0 2px var(--blue);transform:translateX(-50%);transition:left .4s cubic-bezier(.3,.8,.3,1)}
+.tl-l{display:flex;justify-content:space-between;font-size:11px;color:var(--muted);margin:8px 0 0}
+.ovr{margin-top:10px;padding:8px 10px;border-radius:9px;background:var(--j-verif-bg);font-size:13px;border:1px solid #B9D8EE}
+.sumline{display:flex;flex-wrap:wrap;gap:6px}
+.sp{font-size:12px;font-weight:700;padding:3px 10px;border-radius:999px;background:var(--bg-c);color:var(--c);border:1px solid var(--c)}
+.items{display:grid;gap:10px;margin:0;padding:0;list-style:none}
+.it{border:1px solid var(--line);border-left:6px solid var(--c);border-radius:10px;padding:10px 12px;background:#fff}
+.it-h{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:4px}
+.code{font-weight:800;font-size:12px;background:var(--ink);color:#fff;border-radius:6px;padding:2px 8px}
+.jt{font-size:11.5px;font-weight:800;color:var(--c);background:var(--bg-c);border:1px solid var(--c);border-radius:6px;padding:1px 8px;display:inline-flex;align-items:center;gap:5px}
+.jt .bars{display:inline-flex;gap:1.5px;align-items:flex-end}
+.jt .bars i{width:3px;background:var(--c);opacity:.25;border-radius:1px}
+.jt .bars i:nth-child(1){height:5px}.jt .bars i:nth-child(2){height:7px}.jt .bars i:nth-child(3){height:9px}.jt .bars i:nth-child(4){height:11px}
+.jt .bars i.f{opacity:1}
+.src{font-size:12px;color:var(--muted)}
+.it p{margin:0;font-size:14px;line-height:1.45}
+.why{margin-top:5px;font-size:12.5px;color:var(--muted)}
+.why:before{content:"Pemicu: ";font-weight:700}
+details.dt{margin-top:6px}
+details.dt summary{cursor:pointer;color:var(--blue);font-weight:650;font-size:12.5px;list-style:none}
+details.dt summary::-webkit-details-marker{display:none}
+details.dt summary:before{content:"▸ "}
+details.dt[open] summary:before{content:"▾ "}
+details.dt div{margin-top:6px;font-size:13.5px;line-height:1.5;padding:8px 10px;background:var(--bg);border-radius:8px}
+.empty{padding:18px;text-align:center;color:var(--muted);border:1px dashed var(--line);border-radius:10px;background:var(--bg)}
+.empty b{display:block;color:var(--ink);font-size:15px;margin-bottom:2px}
+.note{margin-top:10px;padding:9px 12px;border-radius:9px;font-size:13px;border:1px solid #E7C873;background:#FFF6DB}
+.note.fu{border-color:#B9D8EE;background:var(--j-verif-bg)}
+.note b{font-weight:750}
+.tools{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.btn{border:1px solid var(--blue);background:var(--blue);color:#fff;border-radius:9px;padding:7px 14px;font-weight:650;font-size:13px;cursor:pointer;min-height:36px}
+.btn.o{background:#fff;color:var(--blue)}
+.btn:hover{filter:brightness(.95)}
+
+/* ---------- Catatan ---------- */
+.catatan{max-width:1320px;margin:0 auto;padding:0 20px 40px}
+.catatan details{background:#fff;border:1px solid var(--line);border-radius:var(--radius);padding:12px 18px}
+.catatan summary{cursor:pointer;font-weight:750}
+.catatan ol,.catatan ul{margin:8px 0;padding-left:20px}
+.catatan li{margin:4px 0;font-size:13.5px}
+.catatan h3{font-size:13.5px;margin:12px 0 2px}
+.mode{display:inline-flex;border:1px solid var(--line);border-radius:10px;overflow:hidden;margin:8px 0}
+.mode button{border:0;background:#fff;padding:7px 14px;cursor:pointer;font-weight:650;font-size:13px}
+.mode button[aria-pressed=true]{background:var(--blue);color:#fff}
+footer{max-width:1320px;margin:0 auto;padding:0 20px 30px;color:var(--muted);font-size:12px}
+
+/* ---------- Mobile bar ---------- */
+.mbar{display:none}
+@media (max-width:1020px){
+  main{grid-template-columns:minmax(0,1fr)}
+  .col-r{position:static;max-height:none;overflow:visible}
+  .mbar{display:flex;position:fixed;left:0;right:0;bottom:0;z-index:20;background:#fff;border-top:3px solid var(--blue);padding:8px 14px;gap:10px;align-items:center;justify-content:space-between;box-shadow:0 -6px 18px rgba(16,38,61,.12);cursor:pointer}
+  .mbar b{font-size:14px}
+  .flow{display:none}
+}
+@media (max-width:640px){
+  .ident{grid-template-columns:1fr 1fr}.ident .fld:last-child{grid-column:1/-1}
+  .out2{grid-template-columns:1fr}
+  .stages{grid-template-columns:repeat(5,minmax(0,1fr))}.stg{font-size:10px;padding:6px 2px}
+  .seg button{width:32px;height:36px}
+  .prm{flex-wrap:wrap}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}html{scroll-behavior:auto}}
+</style>
+</head>
+<body>
+<div class="stripe"></div>
+<header class="top"><div class="top-in">
+  <div class="brand">
+    <div class="logo" aria-hidden="true"><svg width="26" height="26" viewBox="0 0 64 64"><path d="M36 6 16 36h14l-4 22 22-32H34z" fill="#FFC72C"/></svg></div>
+    <div><h1>Black Box Intervensi Aset Trafo Tenaga</h1><p>Simulasi interaktif · kertas kerja Aplikasi2 · HI uji → jenis, tindakan, waktu</p></div>
+  </div>
+  <div class="flow" aria-hidden="true">
+    <span class="n">① Input HI uji</span>
+    <svg width="22" height="12" viewBox="0 0 22 12"><path d="M0 6h19m-5-5 5 5-5 5" fill="none" stroke="currentColor" stroke-width="2"/></svg>
+    <span class="n bb">② Black box</span>
+    <svg width="22" height="12" viewBox="0 0 22 12"><path d="M0 6h19m-5-5 5 5-5 5" fill="none" stroke="currentColor" stroke-width="2"/></svg>
+    <span class="n">③ Tindakan · Jenis · Waktu</span>
+  </div>
+</div></header>
+
+<main>
+  <!-- ================= INPUT ================= -->
+  <div class="col-l">
+    <section class="card" aria-labelledby="h-id">
+      <header><h2 id="h-id"><span class="step">1</span>Input · Identitas & skenario</h2><span class="hint">hasil dihitung langsung</span></header>
+      <div class="body">
+        <div class="ident">
+          <div class="fld"><label for="f-id">ID Trafo</label><input id="f-id" type="text" value="T1" maxlength="40"></div>
+          <div class="fld"><label for="f-age">Umur (tahun)</label><input id="f-age" type="number" min="0" max="80" value="13" inputmode="numeric"></div>
+          <div class="fld"><label for="f-date">Tanggal penilaian</label><input id="f-date" type="date"></div>
+        </div>
+        <label class="chk"><input id="f-ai" type="checkbox"><span>Penggantian sudah diusulkan di <b>AI 2027</b> <span class="hint">(kolom “UAI 2027”)</span></span></label>
+        <div style="margin-top:14px">
+          <div class="hint" style="margin-bottom:6px;font-weight:600">Skenario contoh untuk demo</div>
+          <div class="presets" id="presets"></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="card" aria-labelledby="h-par">
+      <header><h2 id="h-par"><span class="step">1</span>Input · Health Index (HI) hasil uji</h2></header>
+      <div class="body">
+        <div class="legend" aria-label="Legenda HI">
+          <span>Pilih HI tiap uji:</span>
+          <span><i style="background:var(--hi1)">1</i> baik</span>
+          <span><i style="background:var(--hi3)">3</i> perhatian</span>
+          <span><i style="background:var(--hi4)">4</i><i style="background:var(--hi5);color:#fff">5</i> Poor / Critical</span>
+          <span><i style="background:repeating-linear-gradient(135deg,#EEF3F8 0 4px,#fff 4px 8px)">–</i> belum diuji</span>
+        </div>
+      </div>
+    </section>
+    <div id="groups" class="col-l"></div>
+  </div>
+
+  <!-- ================= BLACK BOX + OUTPUT ================= -->
+  <div class="col-r" id="out" aria-live="polite">
+    <section class="card bb" aria-labelledby="h-bb">
+      <header><h2 id="h-bb"><span class="step">2</span>Black box · mesin keputusan</h2><span class="hint" id="modeChip"></span></header>
+      <div class="body">
+        <div class="stages" id="stages">
+          <div class="stg"><b>①</b>HI per Failure Mode</div>
+          <div class="stg"><b>②</b>Cek kelengkapan data</div>
+          <div class="stg"><b>③</b>Pohon keputusan</div>
+          <div class="stg"><b>④</b>Prioritas jenis</div>
+          <div class="stg"><b>⑤</b>Waktu eksekusi</div>
+        </div>
+        <div class="bbstat"><span id="bbStatus">Siap</span><span class="pill" id="bbPill"></span></div>
+        <div class="peek" id="peek">
+          <button class="tg" id="peekBtn" aria-expanded="false" aria-controls="fmgrid">🔍 <span id="peekTxt">Intip isi black box</span></button>
+          <div class="fmgrid" id="fmgrid"></div>
+        </div>
+      </div>
+    </section>
+
+    <div class="out2" id="outCards">
+      <section class="card" aria-labelledby="h-j">
+        <header><h2 id="h-j"><span class="step">3</span>Jenis intervensi</h2></header>
+        <div class="body fade" id="jenisBox"></div>
+      </section>
+      <section class="card" aria-labelledby="h-w">
+        <header><h2 id="h-w"><span class="step">3</span>Waktu eksekusi</h2></header>
+        <div class="body fade" id="waktuBox"></div>
+      </section>
+    </div>
+
+    <section class="card" aria-labelledby="h-a">
+      <header><h2 id="h-a"><span class="step">3</span>Apa intervensinya</h2>
+        <div class="tools"><button class="btn o" id="copyBtn" type="button">Salin hasil</button></div></header>
+      <div class="body fade" id="actBox"></div>
+    </section>
+  </div>
+</main>
+
+<section class="catatan">
+  <details>
+    <summary>Catatan logika & hal yang perlu dikonfirmasi pada rumus Excel</summary>
+    <p class="hint" style="margin:8px 0 0">Seluruh logika diterjemahkan dari sheet <i>Kertas kerja</i> (kolom AB–ED) beserta sheet CO, C₂H₄, H₂, C₂H₂, FM non DGA, dan Rekomendasi Blank. Pada mode “Persis Excel”, keluaran identik dengan hasil hitung ulang Excel (diuji pada 3.000 kasus acak).</p>
+    <div class="mode" role="group" aria-label="Mode logika">
+      <button type="button" id="mDesign" aria-pressed="true">Sesuai desain (disarankan)</button>
+      <button type="button" id="mExcel" aria-pressed="false">Persis rumus Excel</button>
+    </div>
+    <h3>Diperbaiki pada mode “Sesuai desain”</h3>
+    <ol>
+      <li><b>C₂H₄ (kolom BC)</b> – rumus memakai FM6 &amp; FM7, padahal sheet C₂H₄ mendefinisikan FM7 (shorted/open turns) &amp; FM8 (shorted core). Disesuaikan ke FM7/FM8.</li>
+      <li><b>H₂ (kolom BD)</b> – dua kondisi IFS identik (“AM≤2”), sehingga KG11 (RETROFIT) tidak pernah muncul. Disesuaikan: FM6 HI 1–3 → FM12 HI 1–3 = KG10, FM12 HI 4–5 = KG11.</li>
+      <li><b>Trending FM12 (kolom DG “3FM12”)</b> – tidak ada rumusnya, sehingga B26 tidak pernah muncul. Ditambahkan.</li>
+    </ol>
+    <h3>Dipertahankan apa adanya (mohon dikonfirmasi)</h3>
+    <ul>
+      <li>C₂H₂ dengan FM6, FM7, FM11 HI 4–5 dan FM12 HI 1–3 (sheet C₂H₂ baris K18) tetap menyertakan KG11 (bushing).</li>
+      <li>Kelengkapan data non-DGA untuk FM7 dihitung dari 3 uji (R, S, Z) dibagi 2, sedangkan nilai maksimumnya hanya dari rasio tegangan &amp; SFRA.</li>
+      <li>KG1 (CO HI 4–5 &amp; FM1 HI 1–3) tidak pernah tercapai karena FM1 sudah memuat CO. Kolom CH (“All Blank”) berisi #REF! (PoF) sehingga tidak dipakai; syarat PoF ≥ 0,5 pada B1 tidak ada di rumus (hanya umur &gt; 40 tahun dan tanpa FM HI 4–5).</li>
+      <li>Waktu eksekusi mengikuti HI <b>tertinggi dari seluruh uji</b> (kolom EC/ED): HI 5 → ≤ 3 bulan, HI 4 → ≤ 24 bulan, selainnya berkala. Opsi “AI 2027” menambah keterangan timeline AI untuk REPLACE.</li>
+    </ul>
+  </details>
+</section>
+<footer>Demo internal · logika berbasis Aplikasi2.xlsx · seluruh perhitungan berjalan di browser, tanpa server.</footer>
+
+<div class="mbar" id="mbar" role="button" tabindex="0" aria-label="Lihat hasil"><span id="mbJ"></span><span id="mbW" class="hint"></span><span aria-hidden="true">▲</span></div>
+
+<script>
+/* Black-box logic: Aplikasi2.xlsx (sheet "Kertas kerja") -> JavaScript.
+   Input  : HI 1-5 per parameter uji (kosong = belum diuji) + umur trafo
+   Output : daftar tindakan, jenis intervensi final, waktu eksekusi            */
+(function (root) {
+  'use strict';
+
+  /* ---------- Definisi parameter (urutan = kolom D..AA di Excel) ---------- */
+  const PARAMS = [
+    { k: 'CO',     col: 'D',  label: 'CO',                 grp: 'dga' },
+    { k: 'CO2',    col: 'E',  label: 'CO₂',                grp: 'dga' },
+    { k: 'RCO',    col: 'F',  label: 'Rasio CO₂/CO',       grp: 'dga' },
+    { k: 'CH4',    col: 'G',  label: 'CH₄',                grp: 'dga' },
+    { k: 'C2H6',   col: 'H',  label: 'C₂H₆',               grp: 'dga' },
+    { k: 'C2H4',   col: 'I',  label: 'C₂H₄',               grp: 'dga' },
+    { k: 'C2H2',   col: 'J',  label: 'C₂H₂',               grp: 'dga' },
+    { k: 'H2',     col: 'K',  label: 'H₂',                 grp: 'dga' },
+    { k: 'ASAM',   col: 'L',  label: 'Keasaman minyak',    grp: 'oil' },
+    { k: 'BDV',    col: 'M',  label: 'Tegangan tembus minyak', grp: 'oil' },
+    { k: 'MOIST',  col: 'N',  label: 'Kadar air minyak',   grp: 'oil' },
+    { k: 'PART',   col: 'O',  label: 'Particle count minyak', grp: 'oil' },
+    { k: 'FLASH',  col: 'P',  label: 'Flash point minyak', grp: 'oil' },
+    { k: 'FURAN',  col: 'Y',  label: 'Furan',              grp: 'oil' },
+    { k: 'PI',     col: 'Q',  label: 'Indeks polarisasi (PI)', grp: 'ins' },
+    { k: 'TDWW',   col: 'T',  label: 'Tan δ winding–winding', grp: 'ins' },
+    { k: 'TDWG',   col: 'U',  label: 'Tan δ winding–ground', grp: 'ins' },
+    { k: 'CWW',    col: 'V',  label: 'Kapasitansi winding–winding', grp: 'ins' },
+    { k: 'IEXC',   col: 'R',  label: 'Arus eksitasi',      grp: 'mech' },
+    { k: 'RTEG',   col: 'S',  label: 'Rasio tegangan',     grp: 'mech' },
+    { k: 'SFRA',   col: 'Z',  label: 'SFRA',               grp: 'mech' },
+    { k: 'TDB',    col: 'W',  label: 'Tan δ bushing',      grp: 'mech' },
+    { k: 'CB',     col: 'X',  label: 'Kapasitansi bushing', grp: 'mech' },
+    { k: 'BDVOLTC',col: 'AA', label: 'BDV OLTC',           grp: 'mech' }
+  ];
+
+  /* ---------- 13 Failure Mode (kolom AB..AN) ---------- */
+  const FM = {
+    1:  { name: 'Cellulose aging',                          keys: ['CO','CO2','RCO','ASAM','TDWW','FURAN'] },
+    2:  { name: 'Hot metal',                                keys: ['CH4','C2H6','C2H4'] },
+    3:  { name: 'Hot metal in contact with cellulose',      keys: ['CO','CO2','RCO','CH4','C2H6','C2H4'] },
+    4:  { name: 'Partial discharge',                        keys: ['CO','CO2','C2H2','H2'] },
+    5:  { name: 'Degradation of oil withstand level',       keys: ['BDV','MOIST'] },
+    6:  { name: 'Moisture & contamination in insulation',   keys: ['PI','TDWW','TDWG'] },
+    7:  { name: 'Shorted / open turns',                     keys: ['IEXC','RTEG','SFRA'] },
+    8:  { name: 'Shorted core to ground',                   keys: ['SFRA'] },
+    9:  { name: 'Deformasi inti',                           keys: ['CWW','SFRA'] },
+    10: { name: 'Koneksi belitan terhadap bushing',         keys: ['C2H2','H2'] },
+    11: { name: 'Oil deterioration (physical contamination)', keys: ['BDV','MOIST','PART','FLASH'] },
+    12: { name: 'Bushing moisture contamination',           keys: ['TDB','CB'] },
+    13: { name: 'OLTC moisture ingress',                    keys: ['BDVOLTC'] }
+  };
+
+  /* Cabang non-DGA (kolom BX..CF): FM, uji yg dihitung kelengkapannya (+penyebut Excel),
+     uji yg diambil nilai max, kode "lengkapi uji", kode tindakan                       */
+  const NONDGA = [
+    { fm: 1,  q: ['ASAM','TDWW','FURAN'], den: 3, mx: ['ASAM','TDWW','FURAN'], comp: 'F10', act: 'F1' },
+    { fm: 5,  q: ['BDV','MOIST'],         den: 2, mx: ['BDV','MOIST'],         comp: 'F11', act: 'F2' },
+    { fm: 6,  q: ['PI','TDWW','TDWG'],    den: 3, mx: ['PI','TDWW','TDWG'],    comp: 'F12', act: 'F3' },
+    { fm: 7,  q: ['RTEG','SFRA','IEXC'],  den: 2, mx: ['RTEG','SFRA'],         comp: 'F13', act: 'F4' }, /* persis Excel: /2 */
+    { fm: 8,  q: ['SFRA'],                den: 1, mx: ['SFRA'],                comp: 'F14', act: 'F5' },
+    { fm: 9,  q: ['CWW','SFRA'],          den: 2, mx: ['CWW','SFRA'],          comp: 'F15', act: 'F6' },
+    { fm: 11, q: ['BDV','MOIST'],         den: 2, mx: ['BDV','MOIST'],         comp: 'F16', act: 'F7' },
+    { fm: 12, q: ['TDB','CB'],            den: 2, mx: ['TDB','CB'],            comp: 'F17', act: 'F8' },
+    { fm: 13, q: ['BDVOLTC'],             den: 1, mx: ['BDVOLTC'],             comp: 'F18', act: 'F9' }
+  ];
+
+  /* ---------- Jenis per kode tindakan (sheet CO, C2H4, H2, C2H2, FM non DGA, Rekomendasi Blank) ---------- */
+  const V = 'VERIFIKASI / DIAGNOSIS', RP = 'REPAIR', RT = 'RETROFIT', RL = 'REPLACE';
+  const JENIS = {
+    KG1: V, KG2: V, KG3: V, KG4: V, KG5: RL, KG6: RL, KG7: RL, KG8: V, KG9: V,
+    KG10: V, KG11: RT, KG12: RP, KG13: V, KG14: V,
+    KG15: V, KG16: RP, KG17: RL, KG18: RP, KG19: RL, KG20: V, KG21: V, KG22: V, KG23: V,
+    F1: V, F2: RP, F3: RP, F4: V, F5: V, F6: V, F7: RP, F8: RT, F9: RP,
+    F10: V, F11: V, F12: V, F13: V, F14: V, F15: V, F16: V, F17: V, F18: V,
+    B1: RL
+  };
+  for (let i = 2; i <= 27; i++) JENIS['B' + i] = V;
+  const RANK = { [RL]: 4, [RT]: 3, [RP]: 2, [V]: 1 };
+
+  /* Tabel kombinasi C2H2: bit = (FM6, FM7, FM11, FM12) bernilai HI 4-5 */
+  const C2H2_TABLE = {
+    '0000': ['KG15'], '0001': ['KG11'], '0010': ['KG16'], '0011': ['KG11', 'KG16'],
+    '0100': ['KG17'], '0101': ['KG17', 'KG11'], '0110': ['KG17', 'KG16'], '0111': ['KG17', 'KG16', 'KG11'],
+    '1000': ['KG18'], '1001': ['KG18', 'KG11'], '1010': ['KG18', 'KG16'], '1011': ['KG18', 'KG11', 'KG16'],
+    '1100': ['KG18', 'KG17'], '1101': ['KG18', 'KG17', 'KG11'],
+    '1110': ['KG18', 'KG17', 'KG16', 'KG11'],   /* persis sheet C2H2!K18 (=K12&K11) */
+    '1111': ['KG19']
+  };
+
+  const WAKTU = {
+    5: { months: 3,    label: 'Segera lakukan pemeriksaan dan tindakan teknis paling lambat 3 bulan', tag: 'Segera · ≤ 3 bulan' },
+    4: { months: 24,   label: 'Rencanakan dan selesaikan intervensi paling lambat 24 bulan',          tag: 'Terencana · ≤ 24 bulan' },
+    0: { months: null, label: 'Lakukan secara berkala sesuai kondisi/ pedoman',                       tag: 'Berkala · sesuai pedoman' },
+    ai: 'Sesuai timeline AI 2027'
+  };
+
+  /* ---------- Mesin evaluasi ---------- */
+  function evaluate(inp, opt) {
+    opt = Object.assign({ fixAnomalies: true, umur: 0, ai2027: false }, opt || {});
+    const fix = !!opt.fixAnomalies;
+    const v = k => (inp[k] === undefined || inp[k] === null || inp[k] === '') ? null : Number(inp[k]);
+    const z = k => (v(k) === null ? 0 : v(k));                 // sel kosong = 0 pada perbandingan Excel
+    const cnt = ks => ks.filter(k => v(k) !== null).length;
+    const mx  = ks => { const a = ks.map(v).filter(x => x !== null); return a.length ? Math.max(...a) : null; };
+    const is45 = x => x === 4 || x === 5;
+    const is13 = x => x === 1 || x === 2 || x === 3;
+
+    /* 1) HI & kelengkapan data per FM */
+    const fm = {};
+    for (const i in FM) {
+      const d = FM[i];
+      fm[i] = { name: d.name, hi: mx(d.keys), n: cnt(d.keys), total: d.keys.length, q: cnt(d.keys) / d.keys.length };
+    }
+    const q = i => fm[i].q, h = i => fm[i].hi;
+
+    const recs = [], warnings = [];
+    const add = (code, kind, src, why) => recs.push({ code, kind, jenis: JENIS[code], src, why });
+
+    /* 2) Cabang DGA ---------------------------------------------------- */
+    // CO  (kolom BB)
+    if (is45(v('CO'))) {
+      const src = 'DGA · CO';
+      if (q(1) < 1)        add('KG3', 'dga', src, `CO HI ${v('CO')}; data FM1 baru ${Math.round(q(1) * 100)}% (<100%) → lengkapi uji`);
+      else if (is13(h(1))) add('KG1', 'dga', src, `CO HI ${v('CO')}; data FM1 lengkap, HI FM1 = ${h(1)} (1–3)`);
+      else                 add('KG2', 'dga', src, `CO HI ${v('CO')}; data FM1 lengkap, HI FM1 = ${h(1)} (4–5)`);
+    }
+
+    // C2H4 (kolom BC)
+    if (is45(v('C2H4'))) {
+      const src = 'DGA · C₂H₄';
+      const H = v('C2H6'), G = v('CH4');
+      const pre = `C₂H₄ HI ${v('C2H4')}`;
+      if (H === 1 || H === 2)      add('KG4', 'dga', src, `${pre}; C₂H₆ HI ${H} (≤2) → gas pendukung tidak abnormal`);
+      else if (G === 1 || G === 2) add('KG4', 'dga', src, `${pre}; CH₄ HI ${G} (≤2) → gas pendukung tidak abnormal`);
+      else if (H !== null && G !== null && H >= 3 && G >= 3) {
+        const a = fix ? 7 : 6, b = fix ? 8 : 7;                 // Excel asli memakai FM6/FM7 (geser satu)
+        const base = `${pre}; C₂H₆ HI ${H} & CH₄ HI ${G} (≥3) → evaluasi FM${a} & FM${b}`;
+        if (q(a) < 1) add('KG8', 'dga', src, `${base}; data FM${a} ${Math.round(q(a) * 100)}% → lengkapi uji`);
+        else if (q(b) < 1) add('KG9', 'dga', src, `${base}; data FM${b} ${Math.round(q(b) * 100)}% → lengkapi uji`);
+        else {
+          const A = h(a), B = h(b);
+          const t = `${base}; FM${a} HI ${A}, FM${b} HI ${B}`;
+          if (is13(A)) add(is13(B) ? 'KG4' : 'KG5', 'dga', src, t);
+          else         add(is13(B) ? 'KG6' : 'KG7', 'dga', src, t);
+        }
+      } else warnings.push('C₂H₄ HI 4–5 tetapi gas pendukung (C₂H₆ / CH₄) belum diisi → cabang keputusan C₂H₄ tidak terpicu.');
+    }
+
+    // H2 (kolom BD)
+    if (v('H2') !== null && v('H2') >= 4) {
+      const src = 'DGA · H₂';
+      const G = v('CH4'), pre = `H₂ HI ${v('H2')}`;
+      if (G === 1) add('KG10', 'dga', src, `${pre}; CH₄ HI 1 (<2) → H₂ dominan, validasi hasil`);
+      else if (G !== null && G >= 2) {
+        const base = `${pre}; CH₄ HI ${G} (≥2) → evaluasi FM6 & FM12`;
+        if (q(6) < 1) add('KG13', 'dga', src, `${base}; data FM6 ${Math.round(q(6) * 100)}% → lengkapi uji`);
+        else if (q(12) < 1) add('KG14', 'dga', src, `${base}; data FM12 ${Math.round(q(12) * 100)}% → lengkapi uji`);
+        else {
+          const A = h(6), B = h(12), t = `${base}; FM6 HI ${A}, FM12 HI ${B}`;
+          if (A <= 3) {
+            if (fix) add(B <= 3 ? 'KG10' : 'KG11', 'dga', src, t);
+            else if (B <= 2) add('KG10', 'dga', src, t);
+            else warnings.push('H₂ cabang FM6 1–3 & FM12 HI 3–5 tidak menghasilkan keluaran pada rumus Excel asli (kondisi ganda "AM≤2").');
+          } else {
+            if (B <= 3) add('KG12', 'dga', src, t);
+            else { add('KG11', 'dga', src, t); add('KG12', 'dga', src, t); }
+          }
+        }
+      } else warnings.push('H₂ HI 4–5 tetapi CH₄ belum diisi → cabang keputusan H₂ tidak terpicu.');
+    }
+
+    // C2H2 (kolom BE)
+    if (v('C2H2') !== null && v('C2H2') >= 4) {
+      const src = 'DGA · C₂H₂';
+      const pre = `C₂H₂ HI ${v('C2H2')}`;
+      if (z('H2') <= 2) add('KG15', 'dga', src, `${pre}; H₂ ${v('H2') === null ? 'belum diisi' : 'HI ' + v('H2')} (≤2) → H₂ tidak mendukung C₂H₂, validasi hasil`);
+      else {
+        const base = `${pre}; H₂ HI ${v('H2')} (≥3) → evaluasi FM6, FM7, FM11, FM12`;
+        const need = [6, 7, 11, 12].find(i => q(i) < 1);
+        if (need) add({ 6: 'KG20', 7: 'KG21', 11: 'KG22', 12: 'KG23' }[need], 'dga', src, `${base}; data FM${need} ${Math.round(q(need) * 100)}% → lengkapi uji`);
+        else {
+          const bits = [6, 7, 11, 12].map(i => (h(i) > 3 ? '1' : '0')).join('');
+          const t = `${base}; HI FM6/7/11/12 = ${[6, 7, 11, 12].map(h).join('/')}`;
+          C2H2_TABLE[bits].forEach(c => add(c, 'dga', src, t));
+        }
+      }
+    }
+
+    /* 3) Cabang non-DGA (kolom BX..CF) ---------------------------------- */
+    const nonDgaStart = recs.length;
+    for (const c of NONDGA) {
+      const f = fm[c.fm], qn = cnt(c.q) / c.den;
+      const src = `Non-DGA · FM${c.fm}`;
+      if (f.hi !== null && f.hi > 3 && qn < 0.7)
+        add(c.comp, 'nondga', src, `FM${c.fm} (${f.name}) HI ${f.hi} tetapi data uji non-DGA ${Math.min(100, Math.round(qn * 100))}% (<70%) → lengkapi uji`);
+      else {
+        const m = mx(c.mx);
+        if (m !== null && m >= 4) add(c.act, 'nondga', src, `FM${c.fm} (${f.name}): uji non-DGA HI maks ${m}, data ${Math.min(100, Math.round(qn * 100))}% (≥70%)`);
+      }
+    }
+
+    /* 4) Umur tua (kolom CG) */
+    const allFm = Object.values(fm).map(x => x.hi).filter(x => x !== null);
+    const maxFm = allFm.length ? Math.max(...allFm) : 0;
+    const umur = Number(opt.umur) || 0;
+    if (umur > 40 && maxFm < 4)
+      add('B1', 'umur', 'Umur', `Umur ${umur} tahun (>40) dan tidak ada FM dengan HI 4–5`);
+    const noDga = recs.every(r => r.kind !== 'dga');
+    const noNon = recs.every(r => r.kind !== 'nondga' && r.kind !== 'umur');
+
+    /* 5) Early-warning bila DGA, non-DGA, dan umur semuanya tidak menghasilkan tindakan */
+    if (noDga && noNon) {
+      for (let i = 1; i <= 13; i++)
+        if (is45(fm[i].hi)) add('B' + (i + 1), 'early', `Early warning · FM${i}`, `FM${i} (${fm[i].name}) HI ${fm[i].hi} tanpa pemicu tindakan lain → verifikasi`);
+      for (let i = 1; i <= 13; i++) {
+        if (fm[i].hi === 3) {
+          if (i === 12 && !fix) { warnings.push('FM12 HI 3 → rumus "3FM12" (kolom DG) kosong pada Excel asli, sehingga tidak ada tindakan trending.'); continue; }
+          add('B' + (i + 14), 'early', `Trending · FM${i}`, `FM${i} (${fm[i].name}) HI 3 tanpa pemicu tindakan lain → trending`);
+        }
+      }
+    }
+
+    /* 6) Jenis final (kolom EA): REPLACE > RETROFIT > REPAIR > VERIFIKASI */
+    let jenis = '';
+    for (const r of recs) if ((RANK[r.jenis] || 0) > (RANK[jenis] || 0)) jenis = r.jenis;
+
+    /* 7) Waktu (kolom EC/ED) */
+    const all = PARAMS.map(p => v(p.k)).filter(x => x !== null);
+    const ec = all.length ? Math.max(...all) : 0;
+    const w = WAKTU[ec === 5 ? 5 : ec === 4 ? 4 : 0];
+    const waktu = { ec, months: w.months, label: w.label, tag: w.tag, override: null };
+
+    /* 8) Opsional: status usulan AI 2027 (kolom DI) */
+    const follow = [];
+    if (opt.ai2027) {
+      recs.push({ code: 'B28', kind: 'ai', jenis: '', src: 'AI 2027', why: 'Penggantian sudah tercantum dalam usulan AI 2027' });
+      if (jenis === RL) waktu.override = WAKTU.ai;
+    } else if (jenis === RL) {
+      follow.push('B30', 'B29');
+    }
+
+    /* daftar tanpa duplikat kode untuk tampilan (kode yang sama bisa dipicu >1 cabang) */
+    const map = new Map();
+    for (const r of recs) {
+      if (!map.has(r.code)) map.set(r.code, Object.assign({}, r));
+      else { const m = map.get(r.code); if (!m.src.includes(r.src)) m.src += ' + ' + r.src; if (m.why !== r.why) m.why += ' | ' + r.why; }
+    }
+    return { fm, recs, items: [...map.values()], jenis, waktu, warnings, follow, codes: recs.map(r => r.code) };
+  }
+
+  const api = { PARAMS, FM, JENIS, RANK, NONDGA, C2H2_TABLE, WAKTU, evaluate };
+  if (typeof module !== 'undefined' && module.exports) module.exports = api;
+  else root.BB = api;
+})(typeof window !== 'undefined' ? window : globalThis);
+
+</script>
+<script>
+const TEXTS = {"KG1": "Validasi hasil CO terkini (ppm dan tanggal sampling) dan bandingkan dengan hasil DGA sebelumnya. Jika hasil sebelumnya <571 ppm (Kondisi 1–2), kenaikan CO ke Kondisi 3–4 harus dikonfirmasi dengan uji DGA ulang; hitung laju TDCG (ppm/hari) dan tetapkan interval sampling serta prosedur operasi menurut Tabel 3 IEEE C57.104-2008. Jika hasil sebelumnya juga ≥571 ppm (CO bertahan di Kondisi 3: 571–1400 ppm atau Kondisi 4: >1400 ppm), perbarui uji Furan, keasaman minyak, dan tan delta winding to winding untuk menilai isolasi kertas, serta korelasikan dengan CO₂ dan rasio CO₂/CO (rasio <3 menguatkan indikasi degradasi kertas bila CO₂ >5000 ppm dan CO >500 ppm).", "KG2": "Cek histori hasil uji Furan, keasaman minyak, dan tan delta winding to winding. Jika salah satu hasil uji masuk kategori Poor atau Critical (HI 4–5), misalnya Furan sudah menunjukkan End of Expected Life isolasi kertas atau tan delta winding >1%, lakukan uji DP (Degree of Polymerization) untuk memverifikasi kondisi isolasi kertas.", "KG3": "Lengkapi uji DGA, keasaman minyak, tan delta winding to winding, dan Furan.", "KG4": "Validasi hasil C₂H₄, C₂H₆, dan CH₄ terkini (ppm dan tanggal sampling) serta TDCG, lalu bandingkan dengan hasil DGA sebelumnya. Tentukan kondisi tiap gas dengan Tabel 1 IEEE C57.104-2008 (batas Kondisi 1: C₂H₄ 50 ppm, C₂H₆ 65 ppm, CH₄ 120 ppm; C₂H₄ 51–100 ppm = Kondisi 2, 101–200 ppm = Kondisi 3, >200 ppm = Kondisi 4). Kondisi trafo mengikuti gas individual atau TDCG dengan kondisi tertinggi, sehingga C₂H₆, dan CH₄ rendah tidak menurunkan tingkat perhatian terhadap C₂H₄. Lakukan sampling ulang, lalu hitung laju TDCG (ppm/hari) dan tetapkan interval sampling serta prosedur operasi menurut Tabel 3 IEEE C57.104-2008. Jika kadar atau laju TDCG meningkat, identifikasi jenis fault termal dengan metode key gas dan rasio Doernenburg/Rogers, lalu perpendek interval sampling sesuai Tabel 3.", "KG5": "Lakukan core-ground insulation resistance test. Jika nilainya lebih rendah dari batas minimum yang ditetapkan dalam standar, spesifikasi pabrikan, atau nilai rujukan yang berlaku, periksa core-ground connection dan cari jalur grounding yang tidak sesuai desain pabrikan. Jika ditemukan, perbaiki sesuai desain, lalu ulangi core-ground insulation resistance test untuk memastikan. Jika kerusakan core tidak layak diperbaiki, lakukan kajian replacement.", "KG6": "Jadwalkan pemadaman (outage) untuk uji offline SFRA dan rasio tegangan. Bila DGA berada pada Kondisi 4 (TDCG >4630 ppm) dengan laju TDCG ≥10 ppm/hari, pertimbangkan segera mengeluarkan trafo dari operasi dan minta rekomendasi pabrikan. Jika SFRA menunjukkan kerusakan winding kategori obvious/severe distortion (DL/T 911-2004), dengan hasil rasio tegangan menyimpang >0,5% dari name plate sebagai konfirmasi, ajukan replacement melalui kajian teknis-ekonomis (B29).", "KG7": "Jadwalkan pemadaman (outage) untuk uji offline SFRA pada winding dan core. Bila DGA berada pada Kondisi 4 (TDCG >4630 ppm) dengan laju TDCG ≥10 ppm/hari, pertimbangkan segera mengeluarkan trafo dari operasi dan minta rekomendasi pabrikan. Jika SFRA menunjukkan kategori severe distortion (DL/T 911-2004) dan kerusakan dinilai tidak dapat diperbaiki (non-recoverable), ajukan replacement melalui kajian teknis-ekonomis (B29).", "KG8": "Lengkapi uji arus eksitasi, rasio tegangan, SFRA", "KG9": "Lengkapi uji SFRA", "KG10": "Validasi hasil H₂ dan CH₄ terkini (ppm dan tanggal sampling) serta TDCG, lalu bandingkan dengan hasil DGA sebelumnya. Tentukan kondisi tiap gas dengan Tabel 1 IEEE C57.104-2008 (batas Kondisi 1: H₂ 100 ppm, CH₄ 120 ppm; H₂ 101–700 ppm = Kondisi 2, 701–1800 ppm = Kondisi 3, >1800 ppm = Kondisi 4). Kondisi trafo mengikuti gas individual atau TDCG dengan kondisi tertinggi, sehingga CH₄ yang rendah tidak menurunkan tingkat perhatian terhadap H₂. Lakukan sampling ulang, lalu hitung laju TDCG (ppm/hari) dan tetapkan interval sampling serta prosedur operasi menurut Tabel 3 IEEE C57.104-2008. Jika kadar atau laju TDCG meningkat, identifikasi jenis fault dengan metode key gas (H₂ dominan dengan sedikit CH₄ mengarah ke partial discharge) dan rasio Doernenburg/Rogers, lalu perpendek interval sampling sesuai Tabel 3.", "KG11": "Jadwalkan pemadaman (outage) untuk uji offline tan delta dan kapasitansi bushing; verifikasi hasilnya beserta histori/tren, serta periksa kebocoran dan kondisi fisik bushing. Jika tan delta melebihi batas sesuai tipe bushing (Tabel 3-19 Buku Pedoman, mis. OIP >0,5% menurut IEEE C57.19.01 atau >2× nilai awal menurut CIGRÉ TB 445) atau kapasitansi naik >10% dari nilai awal (CIGRÉ TB 445), ganti bushing; bila batas jauh terlampaui (mis. OIP ≥1%), bushing perlu segera diganti.", "KG12": "Konfirmasi indikasi kelembapan dari hasil uji kadar air dan tegangan tembus minyak serta uji isolasi (PI, tan delta). Temukan dan perbaiki sealing/breather atau titik masuk moisture, lalu lakukan treatment/pengeringan sesuai kondisi minyak dan isolasi padat. Sebelum operasi normal dilanjutkan, uji ulang kadar air dan tegangan tembus minyak (batas IEC 60422), PI (≥1,25), dan tan delta belitan (≤1% untuk trafo operasi).", "KG13": "Lengkapi uji index polarisasi (PI), tan delta winding to winding, tan delta winding to ground", "KG14": "Lengkapi uji tan delta bushing, kapasitansi bushing", "KG15": "Validasi hasil C₂H₂ dan H₂ terkini (ppm dan tanggal sampling) serta TDCG, lalu bandingkan dengan hasil DGA sebelumnya. Menurut Tabel 1 IEEE C57.104-2008, batas Kondisi 1 C₂H₂ hanya 1 ppm (2–9 ppm = Kondisi 2, 10–35 ppm = Kondisi 3, >35 ppm = Kondisi 4) dan H₂ 100 ppm; kondisi trafo mengikuti gas dengan kondisi tertinggi, sehingga H₂ yang rendah tidak menurunkan tingkat perhatian terhadap C₂H₂. Lakukan sampling ulang, lalu hitung laju TDCG (ppm/hari) dan tetapkan interval sampling serta prosedur operasi menurut Tabel 3 IEEE C57.104-2008. Kenaikan C₂H₂ harus diinvestigasi untuk indikasi arcing (H₂ dan C₂H₂ sebanding besarnya); arcing aktif memerlukan tindakan segera. Periksa juga kemungkinan kebocoran minyak dari kompartemen OLTC ke tangki utama.", "KG16": "Identifikasi jenis dan sumber kontaminan (kebocoran, breather, hasil uji minyak), hentikan sumbernya, lalu lakukan treatment minyak. Uji ulang tegangan tembus, kadar air, dan jumlah partikel minyak terhadap batas IEC 60422; ganti minyak bila batas tersebut tidak dapat dicapai melalui treatment. Catat tanggal treatment karena memengaruhi pembacaan tren DGA.", "KG17": "Jadwalkan pemadaman (outage) untuk uji offline final condition assessment (rasio tegangan dan SFRA). Bila DGA berada pada Kondisi 4 (TDCG >4630 ppm) dengan laju TDCG ≥10 ppm/hari, pertimbangkan segera mengeluarkan trafo dari operasi dan minta rekomendasi pabrikan. Jika SFRA menunjukkan kerusakan winding kategori severe distortion (DL/T 911-2004), dengan hasil rasio tegangan menyimpang >0,5% dari name plate sebagai konfirmasi, dan kerusakan dinilai tidak dapat diperbaiki (non-recoverable), ajukan replacement melalui kajian teknis-ekonomis (B29).", "KG18": "Konfirmasi indikasi kelembapan dari hasil uji kadar air dan tegangan tembus minyak serta uji isolasi (PI, tan delta). Temukan dan perbaiki sealing/breather atau titik masuk moisture, lalu lakukan treatment/pengeringan sesuai kondisi minyak dan isolasi padat. Sebelum operasi normal dilanjutkan, uji ulang kadar air dan tegangan tembus minyak (batas IEC 60422), PI (≥1,25), dan tan delta belitan (≤1% untuk trafo operasi).", "KG19": "Jadwalkan pemadaman (outage) untuk uji offline final condition assessment (rasio tegangan dan SFRA). Bila DGA berada pada Kondisi 4 (TDCG >4630 ppm) dengan laju TDCG ≥10 ppm/hari, pertimbangkan segera mengeluarkan trafo dari operasi dan minta rekomendasi pabrikan. Jika SFRA menunjukkan kerusakan winding kategori severe distortion (DL/T 911-2004), dengan hasil rasio tegangan menyimpang >0,5% dari name plate sebagai konfirmasi, dan kerusakan dinilai tidak dapat diperbaiki (non-recoverable), ajukan replacement melalui kajian teknis-ekonomis (B29).", "KG20": "Lengkapi uji index polarisasi (PI), tan delta winding to winding, tan delta winding to ground", "KG21": "Lengkapi uji arus eksitasi, rasio tegangan, SFRA", "KG22": "Lengkapi uji tegangan tembus oil, moisture content oil, sedimen oil, flash point oil", "KG23": "Lengkapi uji tan delta bushing, kapasitansi bushing", "F1": "Cek histori hasil uji Furan, keasaman minyak, dan tan delta winding to winding. Jika salah satu hasil uji masuk kategori Poor atau Critical (HI 4–5), misalnya Furan sudah menunjukkan End of Expected Life isolasi kertas atau tan delta winding >1%, lakukan uji DP (Degree of Polymerization) untuk memverifikasi kondisi isolasi kertas.", "F2": "Periksa dan perbaiki sumber masuknya moisture (sealing, gasket, breather), lalu lakukan oil treatment (filter/dehydration). Uji ulang BDV dan kadar air minyak setelah treatment dan pastikan memenuhi batas IEC 60422.", "F3": "Periksa potensi masuknya moisture pada sealing/breather dan lakukan perbaikan. Lakukan drying/treatment minyak sesuai kondisi, lalu uji ulang indeks polarisasi (target ≥1,25) dan tan delta winding (maks. 1% untuk trafo operasi) setelah treatment.", "F4": "Lakukan uji RDC pada seluruh fasa dan tap, dengan hasil dikoreksi ke suhu 75°C (IEC 60076-1). Jika deviasi >1% terhadap hasil uji pabrik atau >2–3% terhadap fasa lain/hasil uji sebelumnya (CIGRÉ TB 445), periksa koneksi terminal/bushing dan OLTC/tap connection. Jika short/open turns belum terlokalisasi, lakukan SFRA dan bandingkan dengan hasil sebelumnya.", "F5": "Lakukan core-ground insulation resistance test. Jika nilainya lebih rendah dari batas minimum yang ditetapkan dalam standar, spesifikasi pabrikan, atau nilai rujukan yang berlaku, periksa core-ground connection dan cari unintended/multiple grounding. Jika ditemukan, perbaiki sesuai desain. Setelah perbaikan, ulangi core-ground IR test untuk memastikan. Jika tidak dapat diperbaiki rencanakan penggantian trafo", "F6": "Lakukan pengujian arus eksitasi, RDC, insulation resistance test core to ground, dan korelasikan dengan hasil uji rasio tegangan dan SFRA. Jika terindikasi perubahan mekanis internal, lakukan pemeriksaan internal. Jika ditemukan deformasi/kelonggaran, lakukan repositioning, perbaikan clamping/insulasi sesuai temuan, dan ulangi SFRA setelah perbaikan. Jika SFRA tetap menunjukkan obvious/severe distortion (DL/T 911-2004) dan kerusakan tidak dapat dipulihkan, ajukan penggantian melalui kajian teknis-ekonomis (B29).", "F7": "Identifikasi sumber kontaminan dengan memeriksa sealing/breather dan kebocoran, lalu perbaiki, kemudian lakukan oil filtration/dehydration. Uji ulang tegangan tembus, kadar air, jumlah partikel, dan flash point minyak setelah treatment terhadap batas IEC 60422.", "F8": "Bandingkan hasil uji tan delta dan kapasitansi bushing dengan baseline/hasil sebelumnya dan antar-fasa. Periksa kondisi fisik bushing dan kebocoran. Jika tan delta melebihi batas sesuai tipe bushing (Tabel 3-19 Buku Pedoman, mis. OIP >0,5% menurut IEEE C57.19.01 atau >2× nilai awal menurut CIGRÉ TB 445) atau kapasitansi naik >10% dari nilai awal (CIGRÉ TB 445), rencanakan replacement bushing sesuai hasil pemeriksaan.", "F9": "Periksa sealing, gasket, breather, dan indikasi masuknya moisture, lalu lakukan perbaikan untuk mencegah masuknya moisture dan lakukan treatment/penggantian minyak OLTC. Setelah itu uji ulang BDV dan kadar air minyak OLTC; minyak perlu diganti bila tidak memenuhi batas CIGRÉ 12-13 (1982): OLTC neutral-end/trafo hubung Y >30 kV/2,5 mm dan <40 ppm; OLTC single-pole/trafo hubung Δ >40 kV/2,5 mm dan <30 ppm.", "F10": "Lengkapi uji keasaman minyak, tan delta winding to winding, dan Furan.", "F11": "Lengkapi uji tegangan tembus oil, moisture content oil", "F12": "Lengkapi uji index polarisasi (PI), tan delta winding to winding, tan delta winding to ground", "F13": "Lengkapi uji arus eksitasi, rasio tegangan, SFRA", "F14": "Lengkapi uji SFRA", "F15": "Lengkapi uji SFRA, kapasitansi winding to winding", "F16": "Lengkapi uji tegangan tembus oil, moisture content oil, sedimen oil, flash point oil", "F17": "Lengkapi uji tan delta bushing, kapasitansi bushing", "F18": "Lengkapi uji BDV OLTC", "B1": "Umur trafo telah melebihi masa manfaat aset (kriteria kertas kerja: umur >40 tahun dan PoF ≥0,5, tanpa FM dengan HI 4–5). Dapat diusulkan untuk dilakukan replacement dengan justifikasi teknis dan ekonomis (seperti OPEX vs CAPEX, risiko gangguan) sebagai pertimbangan untuk dekomisioning aset.", "B2": "Cellulose aging terindikasi sebagai early warning dan perlu dikonfirmasi. Lengkapi pengujian DGA, keasaman minyak, tan delta winding to winding, dan furan yang belum tersedia, kemudian evaluasi ulang indikasi cellulose aging.", "B3": "Hot metal terindikasi sebagai early warning dan perlu dikonfirmasi. Lengkapi pengujian DGA yang belum tersedia, kemudian evaluasi ulang indikasi hot metal.", "B4": "Hot metal in contact with cellulose terindikasi sebagai early warning dan perlu dikonfirmasi. Lengkapi pengujian DGA yang belum tersedia, kemudian evaluasi ulang indikasi hot metal in contact with cellulose.", "B5": "Partial discharge terindikasi sebagai early warning dan perlu dikonfirmasi. Lengkapi pengujian DGA yang belum tersedia, kemudian evaluasi ulang indikasi partial discharge.", "B6": "Degradation of oil withstand level terindikasi sebagai early warning dan perlu dikonfirmasi. Lengkapi pengujian tegangan tembus dan moisture content oil yang belum tersedia, kemudian evaluasi ulang indikasi degradation of oil withstand level.", "B7": "Moisture & contamination in insulation terindikasi sebagai early warning dan perlu dikonfirmasi. Lengkapi pengujian indeks polarisasi, tan delta winding to winding, dan tan delta winding to ground yang belum tersedia, kemudian evaluasi ulang indikasi moisture & contamination in insulation.", "B8": "Shorted / open turns terindikasi sebagai early warning dan perlu dikonfirmasi. Lengkapi pengujian arus eksitasi, rasio tegangan dan SFRA yang belum tersedia, kemudian evaluasi ulang indikasi shorted / open turns.", "B9": "Shorted core to ground terindikasi sebagai early warning dan perlu dikonfirmasi. Lengkapi pengujian SFRA, kemudian evaluasi ulang indikasi shorted core to ground.", "B10": "Deformasi inti terindikasi sebagai early warning dan perlu dikonfirmasi. Lengkapi pengujian kapasitansi winding to winding dan SFRA yang belum tersedia, kemudian evaluasi ulang indikasi deformasi inti.", "B11": "Koneksi belitan terhadap bushing terindikasi sebagai early warning dan perlu dikonfirmasi. Lengkapi pengujian DGA yang belum tersedia, kemudian evaluasi ulang indikasi koneksi belitan terhadap bushing.", "B12": "Oil deterioration due to physical contamination terindikasi sebagai early warning dan perlu dikonfirmasi. Lengkapi pengujian tegangan tembus, moisture content, sedimen, dan flash point oil yang belum tersedia, kemudian evaluasi ulang indikasi oil deterioration due to physical contamination.", "B13": "Bushing moisture contamination terindikasi sebagai early warning dan perlu dikonfirmasi. Lengkapi pengujian tan delta dan kapasitansi bushing yang belum tersedia, kemudian evaluasi ulang indikasi bushing moisture contamination.", "B14": "OLTC moisture ingress terindikasi sebagai early warning dan perlu dikonfirmasi. Lengkapi pengujian BDV OLTC yang belum tersedia, kemudian evaluasi ulang indikasi OLTC moisture ingress.", "B15": "Cellulose aging mulai terindikasi. Lakukan trending DGA: hitung laju TDCG (ppm/hari) dan tetapkan interval sampling serta prosedur operasi menurut Tabel 3 IEEE C57.104-2008; investigasi bila ada gas individual melampaui batas Kondisi 1 (Tabel 1) atau laju TDCG meningkat. Trending juga keasaman minyak, tan delta winding to winding (perhatian bila >1%), dan furan terhadap hasil sebelumnya.", "B16": "Hot metal mulai terindikasi. Lakukan trending DGA: hitung laju TDCG (ppm/hari) dan tetapkan interval sampling serta prosedur operasi menurut Tabel 3 IEEE C57.104-2008; investigasi bila ada gas individual melampaui batas Kondisi 1 (Tabel 1) atau laju TDCG meningkat.", "B17": "Hot metal in contact with cellulose mulai terindikasi. Lakukan trending DGA: hitung laju TDCG (ppm/hari) dan tetapkan interval sampling serta prosedur operasi menurut Tabel 3 IEEE C57.104-2008; investigasi bila ada gas individual melampaui batas Kondisi 1 (Tabel 1) atau laju TDCG meningkat.", "B18": "Partial discharge mulai terindikasi. Lakukan trending DGA: hitung laju TDCG (ppm/hari) dan tetapkan interval sampling serta prosedur operasi menurut Tabel 3 IEEE C57.104-2008; investigasi bila ada gas individual melampaui batas Kondisi 1 (Tabel 1) atau laju TDCG meningkat.", "B19": "Degradation of oil withstand level mulai terindikasi. Lakukan trending tegangan tembus dan kadar air minyak terhadap hasil sebelumnya dan batas IEC 60422.", "B20": "Moisture & contamination in insulation mulai terindikasi. Lakukan trending indeks polarisasi, tan delta winding to winding, dan tan delta winding to ground terhadap hasil sebelumnya; perhatian bila PI <1,25 atau tan delta belitan >1%.", "B21": "Shorted / open turns mulai terindikasi. Lakukan trending arus eksitasi (antar-fasa), rasio tegangan, dan SFRA terhadap hasil sebelumnya; perhatian bila rasio tegangan menyimpang >0,5% dari name plate atau SFRA masuk kategori distortion (DL/T 911-2004).", "B22": "Shorted core to ground mulai terindikasi. Lakukan trending SFRA terhadap hasil sebelumnya (time-based) dan antar-fasa; perhatian bila masuk kategori distortion (DL/T 911-2004).", "B23": "Deformasi inti mulai terindikasi. Lakukan trending kapasitansi winding to winding dan SFRA terhadap hasil sebelumnya; perhatian bila SFRA masuk kategori distortion (DL/T 911-2004).", "B24": "Koneksi belitan terhadap bushing mulai terindikasi. Lakukan trending DGA: hitung laju TDCG (ppm/hari) dan tetapkan interval sampling serta prosedur operasi menurut Tabel 3 IEEE C57.104-2008; investigasi bila ada gas individual melampaui batas Kondisi 1 (Tabel 1) atau laju TDCG meningkat.", "B25": "Oil deterioration due to physical contamination mulai terindikasi. Lakukan trending tegangan tembus, kadar air, jumlah partikel, dan flash point minyak terhadap hasil sebelumnya dan batas IEC 60422.", "B26": "Bushing moisture contamination mulai terindikasi. Lakukan trending tan delta dan kapasitansi bushing terhadap hasil sebelumnya; perhatian bila tan delta mendekati batas Tabel 3-19 Buku Pedoman atau kapasitansi berubah >10% dari nilai awal.", "B27": "OLTC moisture ingress mulai terindikasi. Lakukan trending BDV minyak OLTC terhadap hasil sebelumnya; batas CIGRÉ 12-13: >30 kV/2,5 mm (OLTC neutral-end/trafo Y) atau >40 kV/2,5 mm (OLTC single-pole/trafo Δ).", "B28": "Penggantian telah diajukan dalam AI (Anggaran Investasi/Capex) 2027. Cantumkan nomor dan tanggal usulan serta status persetujuannya.", "B29": "Perlu dilengkapi kajian keekonomian dengan dibandingkan terhadap Replace, berdasarkan biaya siklus hidup, estimasi sisa masa manfaat aset, serta risiko kegagalan aset dengan mempertimbangkan leadtime intervensi", "B30": "Usulkan intervensi dalam AI (Anggaran Investasi/Capex) 2027 dengan justifikasi teknis, lingkup pekerjaan, perkiraan biaya, dan target jadwal; setelah diajukan, perbarui status menjadi B28."};
+</script>
+<script>
+(function(){
+'use strict';
+const $ = s => document.querySelector(s);
+const esc = s => String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const JV = {
+  'REPLACE':{c:'#D55E00',bg:'#FCEBDF',bars:4,desc:'mis. penggantian trafo setelah kajian teknis-ekonomis'},
+  'RETROFIT':{c:'#B87A00',bg:'#FFF1CC',bars:3,desc:'mis. penggantian bushing / komponen'},
+  'REPAIR':{c:'#007A5A',bg:'#DDF3EB',bars:2,desc:'mis. perbaikan sealing, treatment & pengeringan minyak'},
+  'VERIFIKASI / DIAGNOSIS':{c:'#1E78B4',bg:'#E3F1FB',bars:1,desc:'uji lanjutan, melengkapi data, atau trending'}
+};
+const ORDER = ['REPLACE','RETROFIT','REPAIR','VERIFIKASI / DIAGNOSIS'];
+const SHORT = {'VERIFIKASI / DIAGNOSIS':'VERIFIKASI'};
+const bars = (n)=>'<span class="bars">'+[1,2,3,4].map(i=>`<i class="${i<=n?'f':''}"></i>`).join('')+'</span>';
+const GROUPS = [
+  {id:'dga', title:'Gas terlarut (DGA)', test:p=>p.grp==='dga'},
+  {id:'oil', title:'Minyak & isolasi', test:p=>p.grp==='oil'||p.grp==='ins'},
+  {id:'mech',title:'Mekanik, bushing & OLTC', test:p=>p.grp==='mech'}
+];
+
+/* ---------- Skenario demo ---------- */
+const S = (o)=>o;
+const PRESETS = [
+  {n:'Trafo sehat', age:13, v:S({CO:1,CO2:1,RCO:2,CH4:1,C2H6:1,C2H4:1,C2H2:1,H2:1,ASAM:1,BDV:2,MOIST:1,PART:1,FLASH:1,FURAN:1,PI:1,TDWW:1,TDWG:2,CWW:1,IEXC:1,RTEG:1,SFRA:1,TDB:1,CB:1,BDVOLTC:2})},
+  {n:'Early warning (HI 3)', age:22, v:S({CO:2,CO2:2,RCO:2,CH4:3,C2H6:2,C2H4:3,C2H2:1,H2:2,ASAM:2,BDV:2,MOIST:2,PART:2,FLASH:1,FURAN:2,PI:2,TDWW:2,TDWG:2,CWW:1,IEXC:1,RTEG:1,SFRA:2,TDB:2,CB:2,BDVOLTC:2})},
+  {n:'Early warning (CO₂ HI 4)', age:27, v:S({CO:2,CO2:4,RCO:2,CH4:1,C2H6:1,C2H4:1,C2H2:1,H2:1,ASAM:2,BDV:2,MOIST:2,PART:1,FLASH:1,FURAN:2,PI:2,TDWW:2,TDWG:2,CWW:1,IEXC:1,RTEG:1,SFRA:1,TDB:2,CB:2,BDVOLTC:2})},
+  {n:'Data uji belum lengkap (CO)', age:31, v:S({CO:4,CO2:3,RCO:3,CH4:2,C2H6:2,C2H4:2,C2H2:1,H2:2,BDV:2,MOIST:2,PI:2,TDWW:null,TDWG:2})},
+  {n:'Kelembapan isolasi (H₂)', age:29, v:S({CO:2,CO2:2,RCO:2,CH4:3,C2H6:2,C2H4:2,C2H2:1,H2:4,ASAM:2,BDV:3,MOIST:3,PART:2,FLASH:2,FURAN:2,PI:4,TDWW:3,TDWG:4,CWW:2,IEXC:2,RTEG:2,SFRA:2,TDB:2,CB:2,BDVOLTC:2})},
+  {n:'Arcing + bushing (C₂H₂)', age:35, v:S({CO:2,CO2:2,RCO:2,CH4:3,C2H6:2,C2H4:3,C2H2:5,H2:4,ASAM:2,BDV:4,MOIST:3,PART:2,FLASH:2,FURAN:2,PI:2,TDWW:2,TDWG:2,CWW:2,IEXC:2,RTEG:2,SFRA:2,TDB:4,CB:3,BDVOLTC:2})},
+  {n:'Hot metal & winding rusak (C₂H₄)', age:38, v:S({CO:2,CO2:2,RCO:2,CH4:4,C2H6:4,C2H4:5,C2H2:1,H2:2,ASAM:2,BDV:2,MOIST:2,PART:2,FLASH:1,FURAN:2,PI:2,TDWW:2,TDWG:2,CWW:2,IEXC:3,RTEG:4,SFRA:5,TDB:2,CB:2,BDVOLTC:2})},
+  {n:'Umur > 40 tahun', age:45, v:S({CO:2,CO2:3,RCO:2,CH4:2,C2H6:2,C2H4:2,C2H2:1,H2:2,ASAM:3,BDV:2,MOIST:2,PART:2,FLASH:2,FURAN:3,PI:2,TDWW:3,TDWG:2,CWW:2,IEXC:2,RTEG:2,SFRA:2,TDB:2,CB:2,BDVOLTC:2})}
+];
+
+/* ---------- State ---------- */
+const P = BB.PARAMS;
+const st = { vals:{}, mode:'design', open:false, preset:null };
+P.forEach(p=>st.vals[p.k]=null);
+const todayISO = ()=>{ const d=new Date(); const m=String(d.getMonth()+1).padStart(2,'0'), da=String(d.getDate()).padStart(2,'0'); return `${d.getFullYear()}-${m}-${da}`; };
+$('#f-date').value = todayISO();
+
+/* ---------- Bangun input ---------- */
+const fmOf = k => Object.keys(BB.FM).filter(i=>BB.FM[i].keys.includes(k)).map(i=>'FM'+i).join(', ');
+function buildGroups(){
+  $('#groups').innerHTML = GROUPS.map(g=>{
+    const rows = P.filter(g.test).map(p=>`
+      <div class="prm" data-k="${p.k}">
+        <span class="nm" title="Masuk ke ${fmOf(p.k)}">${p.label}</span>
+        <div class="seg" role="radiogroup" aria-label="HI ${esc(p.label)}">
+          ${[0,1,2,3,4,5].map(v=>`<button type="button" role="radio" data-v="${v}" aria-checked="false" aria-label="${v===0?'belum diuji':'HI '+v}" tabindex="-1">${v===0?'–':v}</button>`).join('')}
+        </div>
+      </div>`).join('');
+    return `<section class="card" aria-labelledby="g-${g.id}"><header><h2 id="g-${g.id}"><span class="step">1</span>${g.title}</h2><span class="cnt" data-cnt="${g.id}"></span></header><div class="body">${rows}</div></section>`;
+  }).join('');
+}
+function syncInputs(){
+  document.querySelectorAll('.prm').forEach(row=>{
+    const cur = st.vals[row.dataset.k]; const sel = cur==null?0:cur;
+    row.querySelectorAll('button').forEach(b=>{
+      const on = Number(b.dataset.v)===sel;
+      b.setAttribute('aria-checked', on);
+      b.tabIndex = on?0:-1;
+    });
+  });
+  GROUPS.forEach(g=>{
+    const ps=P.filter(g.test), n=ps.filter(p=>st.vals[p.k]!=null).length;
+    document.querySelector(`[data-cnt="${g.id}"]`).textContent = `${n}/${ps.length} diuji`;
+  });
+}
+function buildPresets(){
+  $('#presets').innerHTML = PRESETS.map((p,i)=>`<button class="chip" type="button" data-i="${i}">${p.n}</button>`).join('')
+    + `<button class="chip ghost" type="button" data-act="rand">🎲 Acak</button><button class="chip ghost" type="button" data-act="reset">Reset</button>`;
+}
+function setPresetUI(){ document.querySelectorAll('#presets .chip').forEach(c=>c.classList.toggle('on', c.dataset.i!=null && Number(c.dataset.i)===st.preset)); }
+function applyPreset(i){
+  const p=PRESETS[i]; P.forEach(x=>st.vals[x.k]= (p.v[x.k]==null?null:p.v[x.k]));
+  $('#f-age').value=p.age; st.preset=i; $('#f-ai').checked=false; recalc();
+}
+function randomize(){
+  const w=[0,.22,.2,.2,.18,.2]; // 0 = belum diuji
+  const hot = Math.random()<.7;
+  P.forEach(x=>{ let r=Math.random(), v=0, acc=0;
+    const wt = hot ? [.12,.16,.16,.18,.2,.18] : [.2,.28,.24,.16,.07,.05];
+    for(let i=0;i<6;i++){ acc+=wt[i]; if(r<=acc){v=i;break;} }
+    st.vals[x.k]= v===0?null:v; });
+  $('#f-age').value = [8,15,22,30,38,42,48][Math.floor(Math.random()*7)]; st.preset=null; recalc();
+}
+function resetAll(){ P.forEach(x=>st.vals[x.k]=null); $('#f-age').value=13; $('#f-ai').checked=false; st.preset=null; recalc(); }
+
+/* ---------- Hitung & tampilkan ---------- */
+const STAGES = ()=>[...document.querySelectorAll('#stages .stg')];
+let runId=0, lastRes=null;
+const hiCls = v=> v==null?'':'h'+v;
+function getOpt(){ return { fixAnomalies: st.mode==='design', umur: Number($('#f-age').value)||0, ai2027: $('#f-ai').checked }; }
+function recalc(){
+  syncInputs(); setPresetUI();
+  const res = BB.evaluate(st.vals, getOpt());
+  lastRes = res;
+  const id = ++runId;
+  $('#modeChip').textContent = st.mode==='design' ? 'Mode: sesuai desain' : 'Mode: persis Excel';
+  renderBoxLive(res);
+  const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const stg = STAGES();
+  if(reduce){ stg.forEach(s=>s.classList.add('on')); renderOutputs(res); $('#bbStatus').textContent='Selesai'; return; }
+  stg.forEach(s=>s.classList.remove('on'));
+  $('#bbStatus').textContent='Memproses…';
+  $('#outCards').classList.add('busy'); $('#actBox').parentElement.classList.add('busy');
+  stg.forEach((s,i)=>setTimeout(()=>{ if(id===runId) s.classList.add('on'); }, i*70));
+  setTimeout(()=>{ if(id!==runId) return; renderOutputs(res); $('#bbStatus').textContent='Selesai'; $('#outCards').classList.remove('busy'); $('#actBox').parentElement.classList.remove('busy'); }, 5*70+40);
+}
+function renderBoxLive(res){
+  const tested = P.filter(p=>st.vals[p.k]!=null).length;
+  $('#bbPill').textContent = `${tested}/${P.length} uji terisi · ${res.items.filter(r=>r.kind!=='ai').length} tindakan`;
+  $('#fmgrid').innerHTML = Object.keys(res.fm).map(i=>{
+    const f=res.fm[i], q=Math.round(f.q*100);
+    return `<div class="fmt ${hiCls(f.hi)}"><div class="t"><b>FM${i}</b> ${esc(f.name)}</div><div class="r"><span class="hi">${f.hi==null?'–':'HI '+f.hi}</span><span class="hint" style="color:var(--muted)">data ${q}%</span></div><div class="bar"><span style="width:${q}%"></span></div></div>`;
+  }).join('');
+}
+function topJenis(res){ return res.jenis; }
+function addMonths(iso, m){ const [y,mo,d]=iso.split('-').map(Number); const dt=new Date(y,mo-1+m,d); return dt; }
+const fmtDate = d => d.toLocaleDateString('id-ID',{day:'numeric',month:'long',year:'numeric'});
+function headline(code){
+  const t=TEXTS[code]||''; if(/^B(?:[2-9]|1\d|2[0-7])$/.test(code) || t.length<=170) return {h:t, rest:''};
+  const parts=t.split(/\.\s+(?=[A-ZÀ-Ý])/); const h=parts[0].replace(/\.$/,'')+'.';
+  return {h, rest: t.length>h.length+2 ? t : ''};
+}
+function renderOutputs(res){
+  /* --- Jenis --- */
+  const j = res.jenis, v = JV[j];
+  const cnt = {}; res.items.forEach(r=>{ if(r.jenis) cnt[r.jenis]=(cnt[r.jenis]||0)+1; });
+  const style = v?`--c:${v.c};--bg-c:${v.bg}`:'';
+  $('#jenisBox').innerHTML = `
+    <div class="jbadge" style="${style}">
+      ${bars(v?v.bars:0).replace('class="bars"','class="bars" style="--c:'+(v?v.c:'#8aa')+'"')}
+      <div><div class="big">${j?esc(SHORT[j]||j):'TIDAK ADA'}</div>
+      <div class="sub">${j?esc(v.desc):'Tidak ada pemicu intervensi · lanjutkan pemantauan'}</div></div>
+    </div>
+    <div class="ladder">${ORDER.slice().reverse().map(k=>{ const jv=JV[k]; return `<div class="${k===j?'on':''}" style="--c:${jv.c};--bg-c:${jv.bg}">${esc(SHORT[k]||k)}<small>${cnt[k]?cnt[k]+' tindakan':'–'}</small></div>`; }).join('')}</div>
+    <p class="hint" style="margin:10px 0 0">Jenis final = prioritas tertinggi dari semua tindakan: REPLACE &gt; RETROFIT &gt; REPAIR &gt; VERIFIKASI.</p>`;
+
+  /* --- Waktu --- */
+  const w = res.waktu, base = $('#f-date').value || todayISO();
+  const target = w.months ? addMonths(base, w.months) : null;
+  const pos = w.months===3 ? 12 : w.months===24 ? 88 : 50;
+  $('#waktuBox').innerHTML = `
+    <div class="wk">
+      <div class="big">${esc(w.tag)}</div>
+      <div class="date">${target?'Paling lambat '+fmtDate(target):'Tanpa tenggat khusus'}</div>
+      <div class="lbl">${esc(w.label)}</div>
+      <div class="tl" aria-hidden="true"><span class="seg3" style="left:0;width:25%;background:var(--j-replace);opacity:.85"></span><span class="seg24" style="left:25%;width:50%;background:var(--hi4);opacity:.85"></span><span class="seg24" style="left:75%;width:25%;background:var(--hi2)"></span><span class="mk" style="left:${pos}%"></span></div>
+      <div class="tl-l"><span>3 bln</span><span>24 bln</span><span>berkala</span></div>
+      <div class="hint" style="margin-top:8px">Dasar: HI tertinggi seluruh uji = <b>${w.ec||'–'}</b></div>
+      ${w.override?`<div class="ovr"><b>${esc(w.override)}</b> — penggantian sudah diusulkan di AI 2027, eksekusi mengikuti timeline AI.</div>`:''}
+    </div>`;
+
+  /* --- Tindakan --- */
+  const items = res.items.slice().sort((a,b)=>(BB.RANK[b.jenis]||0)-(BB.RANK[a.jenis]||0));
+  const sum = ORDER.filter(k=>cnt[k]).map(k=>`<span class="sp" style="--c:${JV[k].c};--bg-c:${JV[k].bg}">${cnt[k]} ${esc(SHORT[k]||k)}</span>`).join('');
+  let html = '';
+  if(!items.length){
+    html = `<div class="empty"><b>Tidak ada intervensi</b>Seluruh parameter berada di bawah ambang pemicu. Lanjutkan pemantauan berkala sesuai pedoman.</div>`;
+  } else {
+    html += `<div class="sumline" style="margin-bottom:10px">${sum}</div><ul class="items">` + items.map(r=>{
+      const jv = JV[r.jenis]; const hd = headline(r.code);
+      const sty = jv?`--c:${jv.c};--bg-c:${jv.bg}`:'--c:#7a8ea5;--bg-c:#eef3f8';
+      return `<li class="it" style="${sty}">
+        <div class="it-h"><span class="code">${r.code}</span>${jv?`<span class="jt">${bars(jv.bars)}${esc(SHORT[r.jenis]||r.jenis)}</span>`:''}<span class="src">${esc(r.src)}</span></div>
+        <p>${esc(hd.h)}</p>
+        ${hd.rest?`<details class="dt"><summary>Detail tindakan</summary><div>${esc(hd.rest)}</div></details>`:''}
+        <div class="why">${esc(r.why)}</div></li>`;
+    }).join('') + '</ul>';
+  }
+  if(res.follow.length) html += `<div class="note fu"><b>Langkah lanjutan untuk REPLACE</b><br>${res.follow.map(c=>`<span class="code" style="margin-right:6px">${c}</span>${esc(TEXTS[c])}`).join('<br>')}</div>`;
+  if(res.warnings.length) html += `<div class="note"><b>Perhatian</b><ul style="margin:4px 0 0;padding-left:18px">${res.warnings.map(x=>`<li>${esc(x)}</li>`).join('')}</ul></div>`;
+  $('#actBox').innerHTML = html;
+
+  /* --- bar mobile --- */
+  $('#mbJ').innerHTML = `<b style="color:${v?v.c:'var(--muted)'}">${j?esc(SHORT[j]||j):'Tidak ada intervensi'}</b>`;
+  $('#mbW').textContent = w.tag;
+}
+
+/* ---------- Event ---------- */
+buildGroups(); buildPresets();
+document.addEventListener('click', e=>{
+  const b = e.target.closest('.seg button');
+  if(b){ const k=b.closest('.prm').dataset.k, v=Number(b.dataset.v); st.vals[k]= v===0?null:v; st.preset=null; recalc(); return; }
+  const c = e.target.closest('#presets .chip');
+  if(c){ if(c.dataset.act==='rand') randomize(); else if(c.dataset.act==='reset') resetAll(); else applyPreset(Number(c.dataset.i)); }
+});
+document.addEventListener('keydown', e=>{
+  const b = e.target.closest && e.target.closest('.seg button');
+  if(!b) return;
+  if(['ArrowRight','ArrowLeft','ArrowUp','ArrowDown'].includes(e.key)){
+    e.preventDefault();
+    const arr=[...b.parentElement.children], i=arr.indexOf(b);
+    const n=arr[(i+(e.key==='ArrowRight'||e.key==='ArrowDown'?1:-1)+arr.length)%arr.length];
+    n.click(); n.focus();
+  }
+});
+['#f-age','#f-date'].forEach(s=>$(s).addEventListener('input',()=>{ st.preset=null; recalc(); }));
+$('#f-ai').addEventListener('change',recalc);
+$('#f-id').addEventListener('input',()=>{});
+$('#peekBtn').addEventListener('click',()=>{ st.open=!st.open; $('#peek').classList.toggle('open',st.open); $('#peekBtn').setAttribute('aria-expanded',st.open); $('#peekTxt').textContent= st.open?'Tutup black box':'Intip isi black box'; });
+function setMode(m){ st.mode=m; $('#mDesign').setAttribute('aria-pressed',m==='design'); $('#mExcel').setAttribute('aria-pressed',m==='excel'); recalc(); }
+$('#mDesign').addEventListener('click',()=>setMode('design'));
+$('#mExcel').addEventListener('click',()=>setMode('excel'));
+function jump(){ $('#out').scrollIntoView({behavior:'smooth',block:'start'}); }
+$('#mbar').addEventListener('click',jump);
+$('#mbar').addEventListener('keydown',e=>{ if(e.key==='Enter'||e.key===' '){ e.preventDefault(); jump(); }});
+$('#copyBtn').addEventListener('click',async()=>{
+  const r=lastRes; if(!r) return;
+  const id=$('#f-id').value||'-', age=$('#f-age').value;
+  const lines=[`Trafo ${id} (umur ${age} th)`,`Jenis intervensi : ${r.jenis||'Tidak ada'}`,`Waktu eksekusi   : ${r.waktu.label}${r.waktu.override?' / '+r.waktu.override:''}`,'Tindakan:'];
+  r.items.forEach(x=>lines.push(` - [${x.code}] ${headline(x.code).h}`));
+  try{ await navigator.clipboard.writeText(lines.join('\n')); $('#copyBtn').textContent='Tersalin ✓'; }catch(_){ $('#copyBtn').textContent='Tidak bisa menyalin'; }
+  setTimeout(()=>$('#copyBtn').textContent='Salin hasil',1600);
+});
+
+/* mulai dari skenario menarik */
+applyPreset(5);
+})();
+</script>
+</body>
+</html>
